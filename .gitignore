@@ -1,3 +1,5 @@
+/config/*_rsa*
+/config/*_key*
 /node_modules
 /public/hot
 /public/storage
