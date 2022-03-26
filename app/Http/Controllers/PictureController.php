@@ -26,7 +26,9 @@ class PictureController extends Controller
      */
     public function create(Gallery $gallery)
     {
-        return view('pictures.create', compact('gallery'));
+        $path = "phi/galleries/{$gallery->id}/" . \Str::random(40);
+        $postObject = $this->createS3PostObject($path);
+        return view('pictures.create', compact('gallery', 'path', 'postObject'));
     }
 
     /**
@@ -39,11 +41,6 @@ class PictureController extends Controller
     {
         $picture = new Picture($request->all());
         $picture->gallery()->associate($gallery);
-
-        $picture->path = $request->file('picture_file')->store(
-            'phi/galleries/'.$gallery->id, 's3'
-        );
-
         $picture->save();
 
         return redirect()->route('galleries.pictures.index', $gallery);
@@ -73,5 +70,22 @@ class PictureController extends Controller
     public function destroy(Picture $picture)
     {
         //
+    }
+
+    // TODO: Move this function to a global helper
+    protected function createS3PostObject($key)
+    {
+        $awsClient = new \Aws\S3\S3Client([
+            'version' => 'latest',
+            'region' => config('filesystems.disks.s3.region'),
+        ]);
+        $bucket = config('filesystems.disks.s3.bucket');
+        $formInputs = ['acl' => 'private', 'key' => $key];
+        $options = [
+            ['acl' => 'private'],
+            ['bucket' => $bucket],
+            ['eq', '$key', $key],
+        ];
+        return new \Aws\S3\PostObjectV4($awsClient, $bucket, $formInputs, $options, "+1 hours");
     }
 }
