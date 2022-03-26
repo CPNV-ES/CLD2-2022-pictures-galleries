@@ -58,7 +58,7 @@ class PictureController extends Controller
     public function show(Gallery $gallery, Picture $picture, Request $request)
     {
         if (\Str::startsWith($request->header('Accept'), 'image/')) {
-            return \Storage::disk('s3')->download($picture->path);
+            return redirect(\Storage::disk('s3')->temporaryUrl($picture->path, now()->addMinutes(1)));
         } else {
             return view('pictures.show', compact('picture', 'gallery'));
         }
